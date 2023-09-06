@@ -1,0 +1,9 @@
+pyzmq
+click 
+
+fastapi
+uvicorn
+
+tiktoken
+protobuf
+sentence-transformers
