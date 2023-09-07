@@ -6,4 +6,5 @@ uvicorn
 
 tiktoken
 protobuf
+python-dotenv
 sentence-transformers

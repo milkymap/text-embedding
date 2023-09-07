@@ -1,1 +1,38 @@
+# base image derivation 
 FROM python:3.8-slim
+
+
+# timezone handler 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Paris 
+
+# initial system requirements 
+RUN apt-get update --fix-missing && \
+    apt-get install --yes --no-install-recommends \
+        tzdata apt-utils dialog gcc git curl pkg-config build-essential ffmpeg 
+
+# user creation 
+RUN useradd --gid root --create-home solver 
+WORKDIR /home/solver 
+
+# virtualenv 
+ENV VIRTUAL_ENV=/opt/venv 
+RUN chmod -R g+rwx /home/solver && python -m venv $VIRTUAL_ENV --system-site-packages 
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+COPY requirements.txt ./ 
+
+# python requirements 
+RUN pip install --upgrade pip && pip install -r requirements.txt 
+    
+# pull source code 
+COPY . ./ 
+
+# env variables
+ENV TRANSFORMERS_CACHE=/home/solver/transformers_cache
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python 
+
+
+# entrypoint 
+ENTRYPOINT ["python", "main.py"]
+CMD ["--help"]
