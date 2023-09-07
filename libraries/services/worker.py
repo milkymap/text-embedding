@@ -38,14 +38,12 @@ class ZMQWorker(ABC):
         poller = zmq.Poller()
         poller.register(dealer_socket, zmq.POLLIN)
 
+        
         logger.info(f'worker {self.worker_id} is running')
         has_asked_new_job = False 
         keep_looping = True 
         while keep_looping:
             try:
-
-                logger.info(f'worker {self.worker_id} is running')
-
                 if not has_asked_new_job:
                     dealer_socket.send_multipart([b'', ZMQWorkerMessageType.ASK_NEW_TASK, b'', b''])
                     has_asked_new_job = True 
@@ -55,7 +53,6 @@ class ZMQWorker(ABC):
                     dealer_polling_value = map_socket2value[dealer_socket]
                     if dealer_polling_value == zmq.POLLIN:
                         _, client_id, incoming_msg = dealer_socket.recv_multipart()
-                        logger.info(f'worker {self.worker_id} has received a new task')
                         response = self.__consume_message(incoming_msg)
                         dealer_socket.send_multipart([b'', ZMQWorkerMessageType.SEND_RESPONSE, client_id],flags=zmq.SNDMORE)
                         dealer_socket.send_pyobj(response)
