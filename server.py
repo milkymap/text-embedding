@@ -11,7 +11,7 @@ from fastapi import HTTPException, BackgroundTasks
 import signal 
 
 from libraries.log import logger 
-from libraries.apischema import TextEmbeddingReqBaseModel, TextEmbeddingResBaseModel
+from libraries.apischema import ComputeEmbeddingRequestModel, ComputeEmbeddingResponseContentModel, ComputeEmbeddingResponseModel
 from libraries.zmqconfig import ZMQEndpoint
 
 class APIServer:
@@ -43,9 +43,9 @@ class APIServer:
         self.app.add_event_handler('startup', self.handle_startup)
         self.app.add_event_handler('shutdown', self.handle_shutdown)
 
-        self.app.add_api_route('/embedding', self.handle_embedding, methods=['POST'], response_model=TextEmbeddingResBaseModel)
+        self.app.add_api_route('/compute_embedding', self.handle_compute_embedding, methods=['POST'], response_model=ComputeEmbeddingResponseModel)
     
-    async def handle_embedding(self, incoming_req:TextEmbeddingReqBaseModel):
+    async def handle_compute_embedding(self, incoming_req:ComputeEmbeddingRequestModel):
         text = incoming_req.text
         try:
             dealer_socket:aiozmq.Socket = self.ctx.socket(zmq.DEALER)
@@ -65,10 +65,15 @@ class APIServer:
         dealer_socket.close(linger=0)
 
         if worker_response_status == True:
-            return TextEmbeddingResBaseModel(
-                embedding=worker_response_data
+            return ComputeEmbeddingResponseModel(
+                status=worker_response_status,
+                request_id=incoming_req.request_id,
+                content=ComputeEmbeddingResponseContentModel(
+                    embedding=worker_response_data
+                ),
+                error_message=""
             )
-        
+
         raise HTTPException(
             status_code=500,
             detail='worker was not able to compute the embedding'
